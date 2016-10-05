@@ -1,0 +1,31 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "golang.org/x/net/context",
+			"revision": "ffe101cce3477a6c6d8f0754d103bb0a84ec1266",
+			"revisionTime": "2016-10-03T18:22:05+09:00"
+		},
+		{
+			"path": "golang.org/x/net/context/ctxhttp",
+			"revision": "ffe101cce3477a6c6d8f0754d103bb0a84ec1266",
+			"revisionTime": "2016-10-03T18:22:05+09:00"
+		},
+		{
+			"path": "gopkg.in/olivere/elastic.v3",
+			"revision": "eaecbad7a83e6b60f131825553e5eb7fd5a50b41",
+			"revisionTime": "2016-10-01T14:34:41+02:00"
+		},
+		{
+			"path": "gopkg.in/olivere/elastic.v3/backoff",
+			"revision": "eaecbad7a83e6b60f131825553e5eb7fd5a50b41",
+			"revisionTime": "2016-10-01T14:34:41+02:00"
+		},
+		{
+			"path": "gopkg.in/olivere/elastic.v3/uritemplates",
+			"revision": "eaecbad7a83e6b60f131825553e5eb7fd5a50b41",
+			"revisionTime": "2016-10-01T14:34:41+02:00"
+		}
+	]
+}
