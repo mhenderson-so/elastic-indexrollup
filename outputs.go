@@ -90,11 +90,11 @@ func printBenchmarkTable(results benchmarkData, iterations int) {
 	table := tablewriter.NewWriter(os.Stdout)
 	tableHeader := []string{
 		"Threads",
-		"Buffers",
+		"Buffer",
 		"Average",
 	}
 	for i := 1; i <= iterations; i++ {
-		tableHeader = append(tableHeader, fmt.Sprintf("%d", i))
+		tableHeader = append(tableHeader, fmt.Sprintf("Run %d", i))
 	}
 	table.SetHeader(tableHeader)
 
