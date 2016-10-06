@@ -13,6 +13,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+//Print the standard running data to stderr
 func consoleOut(format string, a ...interface{}) (int, error) {
 	if silent {
 		return 0, nil
@@ -20,6 +21,7 @@ func consoleOut(format string, a ...interface{}) (int, error) {
 	return fmt.Fprintf(os.Stderr, format, a...)
 }
 
+//Print a nice table to stdout showing our progress
 func printProgressTable(start time.Time, got int, matchingIndexesSorted []string, bulkInserter *elastic.BulkProcessor) bool {
 	clearConsole()
 	inserterStats := bulkInserter.Stats()
@@ -73,6 +75,7 @@ func printProgressTable(start time.Time, got int, matchingIndexesSorted []string
 	return !anyNotDone
 }
 
+//Print a nice table to stdout showing the benchmark progress
 func printBenchmarkTable(results benchmarkData, iterations int) {
 	var keys benchmarkSets
 	for key := range results {
@@ -110,7 +113,7 @@ func printBenchmarkTable(results benchmarkData, iterations int) {
 	table.Render()
 }
 
-//http://stackoverflow.com/a/22896706/69683
+//Clears the console. Thanks to http://stackoverflow.com/a/22896706/69683
 func clearConsole() {
 	if silent {
 		return

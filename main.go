@@ -36,7 +36,7 @@ var (
 )
 
 func doMain() int {
-	//Stanard flag validation
+	//Standard flag validation
 	if *inputFilter == "" {
 		fmt.Println("Input filter (infilter) cannot be blank")
 		return 1
@@ -68,35 +68,36 @@ func doMain() int {
 	}
 
 	consoleOut("Creating read client...")
-	inClient, err := elastic.NewSimpleClient(elastic.SetURL(*inputHost))
-	if err != nil {
-		// Handle error
-		panic(err)
-	}
-	consoleOut("Done\n")
-
-	consoleOut("Creating write client...")
-	var outClient *elastic.Client
-	outClient, err = elastic.NewSimpleClient(elastic.SetURL(*outputHost))
-	if err != nil {
-		// Handle error
-		panic(err)
-	}
-	consoleOut("Done\n")
-
-	consoleOut("Creating bulk inserter...")
-	bulkInserter, err := outClient.BulkProcessor().
-		Name("RollupInserter").
-		Workers(2).
-		BulkActions(*bufferSize).
-		Stats(true).
-		Do()
+	inClient, err := elastic.NewSimpleClient(elastic.SetURL(*inputHost)) //Simple client for scrolling through read data
 	if err != nil {
 		fmt.Println(err)
 		return 1
 	}
 	consoleOut("Done\n")
 
+	consoleOut("Creating write client...")
+	var outClient *elastic.Client
+	outClient, err = elastic.NewSimpleClient(elastic.SetURL(*outputHost)) //This client is used for the bulk processor
+	if err != nil {
+		fmt.Println(err)
+		return 1
+	}
+	consoleOut("Done\n")
+
+	consoleOut("Creating bulk inserter...")
+	bulkInserter, err := outClient.BulkProcessor(). //This is our bulk processing service which will just accept docs and do the rest on its own
+							Name("RollupInserter").   //Random name for the processor
+							Workers(2).               //Number of processor workers. Haven't played around with this to see if it makes any difference
+							BulkActions(*bufferSize). //Buffer x records as specified by command flags
+							Stats(true).              //Collect stats
+							Do()                      //Go
+	if err != nil {
+		fmt.Println(err)
+		return 1
+	}
+	consoleOut("Done\n")
+
+	//Find the indexes we need to roll up, based on the regex supplied on the command line
 	consoleOut("Matching indexes...")
 	matchingIndexes, err := getElasticIndexes(inClient, inputPatternRegex)
 	if err != nil {
@@ -110,15 +111,14 @@ func doMain() int {
 	sort.Strings(matchingIndexesSorted)
 	consoleOut("Done\n")
 
-	consoleOut("Setting up channels...")
-	foundDocs := make(chan insertDoc)
-	consoleOut("Done\n")
-
-	var allRead bool
-
 	consoleOut("Setting up readers...")
+	var allRead bool //This bool controls whether we keep our channels open and keep waiting for data
+	foundDocs := make(chan insertDoc)
 	for i, inIdxName := range matchingIndexesSorted {
 		outIdxName := matchingIndexes[inIdxName].Format(*outputPattern)
+		//todo (mhenderson): This probably doesn't need to be channeled, because we are just throwing data
+		//                   into our bulk processing service. Originally this was a bit more complicated,
+		//                   which is why the channels are here. And they just sort of got left over.
 		go rollupIndex(i+1, foundDocs, inClient, outClient, inIdxName, outIdxName)
 	}
 	consoleOut("Done\n")
@@ -133,16 +133,18 @@ func doMain() int {
 			allRead = printProgressTable(start, got, matchingIndexesSorted, bulkInserter)
 			next = time.After(delay)
 		case r := <-foundDocs:
+			//See previous todo, this channel probably doesn't need to exist
 			got++
-			p := elastic.NewBulkIndexRequest().
-				Index(r.DestinationIndex).
-				Type(r.Doc.Type).
-				Id(r.Doc.Id).
-				Doc(r.Doc.Source)
+			p := elastic.NewBulkIndexRequest(). //Index the document
+								Index(r.DestinationIndex). //Destination index
+								Type(r.Doc.Type).          //Document type
+								Id(r.Doc.Id).              //Document ID to prevent doubleups
+								Doc(r.Doc.Source)          //Original JSON document
 			bulkInserter.Add(p)
 		}
 	}
 
+	//Print the final debug statements
 	consoleOut("Flushing final records...")
 	bulkInserter.Flush()
 	consoleOut("Done\n")
@@ -150,6 +152,7 @@ func doMain() int {
 	bulkInserter.Close()
 	consoleOut("Done\n")
 
+	//Show the final stats
 	stats := bulkInserter.Stats()
 	consoleOut("Number of times flush has been invoked: %d\n", stats.Flushed)
 	consoleOut("Number of times workers committed reqs: %d\n", stats.Committed)
