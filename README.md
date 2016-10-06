@@ -6,7 +6,7 @@ Typical usage would be to take a series of daily indexes and roll them up into a
 ## Example usage
 
 ```
-./elastic-indexrollup -infilter ^netflow-2016\.*$ -inpattern netflow-2006.01.02 -outpattern netflowrollup-2006.01
+./elastic-indexrollup -infilter ^netflow-2016.*$ -inpattern netflow-2006.01.02 -outpattern netflowrollup-2006.01
 ```
 
 This would take any index with the name matching the regex `^netflow-2016\.*$`,(all of the NetFlow indexes from 2016) and will roll up all the contained documents into an index matching the GoLang time format of `netflowrollup-2006.01`
