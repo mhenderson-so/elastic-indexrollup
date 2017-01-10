@@ -43,7 +43,7 @@ func doMain() int {
 	}
 	inputPatternRegex, err := regexp.Compile(*inputFilter)
 	if err != nil {
-		fmt.Println("Input pattern could not be compiled to a regex:", err)
+		fmt.Println("Input filter could not be compiled to a regex:", err)
 		return 1
 	}
 	if *inputPattern == "" {
