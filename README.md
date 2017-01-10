@@ -29,7 +29,7 @@ This tool does not delete or modify the source indexes in any way.
   -outhost string
     	(optional) ElasticSearch host to write indexes to. If blank, uses the inhost option
   -outpattern string
-    	The output pattern for indexing the read data, in the Go time format (https://golang.org/pkg/time/#Parse)
+    	The output pattern for indexing the read data, in the Go time format (https://golang.org/pkg/time/#Parse), or a string containing the phrase ISOWEEK if you want to use ISO Week formatting
   -threads int
     	Number of worker threads to process. Each thread will process one day at a time. (default 3)
 ```
@@ -48,6 +48,7 @@ There is an optional `-inhost` you can specify in the event that the machine run
 You must specify one part to the output filter:
 
 * `-outpattern` is the [Go time string](https://golang.org/pkg/time/#Parse) that you will use to represent the _new_ rolled-up index name. Typically it will be very similar to `-inpattern`, but with a different date format (e.g. omitting the day portion).
+* `-outpattern` can also contain the string ISOWEEK if you want to use the [ISO Week Date](https://en.wikipedia.org/wiki/ISO_week_date) format. e.g. `logstash.weekly-ISOWEEK` would be formatted into `logstash.weekly-2017.01` for the first week of January, 2017
 
 There is an optional `-outhost` you can specify in the event that the machine running the rollup is not a member of the ElasticSearch cluster you are writing to.
 

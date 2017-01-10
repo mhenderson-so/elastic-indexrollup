@@ -10,13 +10,15 @@ import (
 	"sync"
 	"time"
 
+	"strings"
+
 	elastic "gopkg.in/olivere/elastic.v3"
 )
 
 var (
 	inputFilter   = flag.String("infilter", "", "A regex to match against index names")
 	inputPattern  = flag.String("inpattern", "", "The output pattern for indexing the read data, in the Go time format (https://golang.org/pkg/time/#Parse)")
-	outputPattern = flag.String("outpattern", "", "The output pattern for indexing the read data, in the Go time format (https://golang.org/pkg/time/#Parse)")
+	outputPattern = flag.String("outpattern", "", "The output pattern for indexing the read data, in the Go time format (https://golang.org/pkg/time/#Parse), or a string containing the phrase ISOWEEK if you want to use ISO Week formatting")
 	inputHost     = flag.String("inhost", "http://localhost:9200", "ElasticSearch host to read indexes from.")
 	outputHost    = flag.String("outhost", "", "(optional) ElasticSearch host to write indexes to. If blank, uses the inhost option")
 	threads       = flag.Int("threads", 3, "Number of worker threads to process. Each thread will process one day at a time.")
@@ -55,6 +57,7 @@ func doMain() int {
 		fmt.Println("Output pattern (outpattern) cannot be blank")
 		return 1
 	}
+
 	if *inputHost == "" {
 		fmt.Println("Input host (inhost) cannot be blank")
 		return 1
@@ -115,7 +118,15 @@ func doMain() int {
 	var allRead bool //This bool controls whether we keep our channels open and keep waiting for data
 	foundDocs := make(chan insertDoc)
 	for i, inIdxName := range matchingIndexesSorted {
-		outIdxName := matchingIndexes[inIdxName].Format(*outputPattern)
+		var outIdxName string
+		if strings.Contains(*outputPattern, "ISOWEEK") {
+			year, week := matchingIndexes[inIdxName].ISOWeek()
+			isoWeek := fmt.Sprintf("%v-%v", year, week)
+			outIdxName = strings.Replace(*outputPattern, "ISOWEEK", isoWeek, 1)
+		} else {
+			outIdxName = matchingIndexes[inIdxName].Format(*outputPattern)
+		}
+
 		//todo (mhenderson): This probably doesn't need to be channeled, because we are just throwing data
 		//                   into our bulk processing service. Originally this was a bit more complicated,
 		//                   which is why the channels are here. And they just sort of got left over.
